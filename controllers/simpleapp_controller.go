@@ -20,14 +20,26 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/banzaicloud/operator-tools/pkg/reconciler"
 	webappv1 "github.com/cmmarslender/web-operator/api/v1"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// Annotations
+	lastAppliedAnnotationKey = "webapp.k8s.cmm.io/last-applied"
+
+	// Labels
+	typeLabelKey = "webapp.k8s.cmm.io/type" // SimpleApp, etc
+	nameLabelKey = "webapp.k8s.cmm.io/name"
 )
 
 // SimpleAppReconciler reconciles a SimpleApp object
@@ -60,22 +72,42 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Create a dummy config map with the value from the CRD, just as a test
-	configMapObject := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-configmap",
-			Namespace: req.Namespace,
-		},
-		Data: map[string]string{
-			"foo": app.Spec.Foo,
+	// @TODO move these to a desired state generator
+	// Deployment
+	objectMeta := r.getObjectMeta(app)
+	deploymentObject := &appsv1.Deployment{
+		ObjectMeta: objectMeta,
+		Spec: appsv1.DeploymentSpec{
+			Replicas: pointer.Int32(1),
+			Selector: &metav1.LabelSelector{ // @TODO could make this a helper - takes obj meta, returns label selector
+				MatchLabels: objectMeta.Labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{ // @TODO could make this a helper - takes obj meta, returns simple obj meta for template
+					Labels: objectMeta.Labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  app.Name,
+							Image: app.Spec.Image,
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 
-	err := ctrl.SetControllerReference(&app, configMapObject, r.Scheme)
+	err := ctrl.SetControllerReference(&app, deploymentObject, r.Scheme)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	result, err := resourceReconciler.ReconcileResource(configMapObject, reconciler.StatePresent)
+	result, err := resourceReconciler.ReconcileResource(deploymentObject, reconciler.StatePresent)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -87,12 +119,31 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
+// getObjectMeta returns the object meta for resources owned by the SimpleApp
+func (r *SimpleAppReconciler) getObjectMeta(app webappv1.SimpleApp) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Namespace: app.Namespace,
+		Name:      app.Name,
+		Labels:    r.labels(app),
+	}
+}
+
+func (r *SimpleAppReconciler) labels(app webappv1.SimpleApp) map[string]string {
+	return map[string]string{
+		typeLabelKey: app.Kind,
+		nameLabelKey: app.Name,
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimpleAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Set our own default annotator so we can control the key used for last-applied
+	patch.DefaultAnnotator = patch.NewAnnotator(lastAppliedAnnotationKey)
+
 	r.Log = ctrl.Log.WithName("controllers").WithName("SimpleApp")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&webappv1.SimpleApp{}).
-		Owns(&corev1.ConfigMap{}).
+		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

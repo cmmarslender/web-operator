@@ -25,11 +25,11 @@ import (
 
 // SimpleAppSpec defines the desired state of SimpleApp
 type SimpleAppSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Image is the container image to deploy
+	Image string `json:"image,omitempty"`
 
-	// Foo is an example field of SimpleApp. Edit simpleapp_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Hostname is the hostname to use for the Ingress
+	Hostname string `json:"hostname,omitempty"`
 }
 
 // SimpleAppStatus defines the observed state of SimpleApp
