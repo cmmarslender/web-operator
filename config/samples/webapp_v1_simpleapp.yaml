@@ -1,0 +1,7 @@
+apiVersion: webapp.k8s.cmm.io/v1
+kind: SimpleApp
+metadata:
+  name: simpleapp-sample
+spec:
+  # Add fields here
+  foo: bar

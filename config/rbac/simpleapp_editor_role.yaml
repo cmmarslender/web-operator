@@ -1,0 +1,24 @@
+# permissions for end users to edit simpleapps.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: simpleapp-editor-role
+rules:
+- apiGroups:
+  - webapp.k8s.cmm.io
+  resources:
+  - simpleapps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - webapp.k8s.cmm.io
+  resources:
+  - simpleapps/status
+  verbs:
+  - get
