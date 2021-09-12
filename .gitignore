@@ -15,7 +15,7 @@ testbin/*
 *.out
 
 # Kubernetes Generated files - skip generated files, except for vendored files
-
+zz_generated.*
 !vendor/**/zz_generated.*
 
 # editor and IDE paraphernalia
@@ -23,3 +23,7 @@ testbin/*
 *.swp
 *.swo
 *~
+
+# Ignore files that are generated with make generate or make manifests
+config/crd/bases
+config/rbac/role.yaml
