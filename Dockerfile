@@ -10,11 +10,15 @@ COPY go.sum go.sum
 RUN go mod download
 
 # Copy the go source
+COPY Makefile Makefile
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY hack/ hack/
+COPY pkg/ pkg/
 
 # Build
+RUN make generate
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
