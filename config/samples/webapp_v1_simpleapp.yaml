@@ -4,4 +4,5 @@ metadata:
   name: simpleapp-sample
 spec:
   image: nginx:latest
+  replicas: 1 # optional, defaults to 1
   hostname: example.com

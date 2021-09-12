@@ -28,6 +28,10 @@ type SimpleAppSpec struct {
 	// Image is the container image to deploy
 	Image string `json:"image,omitempty"`
 
+	// Replicas how many replicas in the deployment
+	// +kubebuilder:default:=1
+	Replicas *int32 `json:"replicas,omitempty"`
+
 	// Hostname is the hostname to use for the Ingress
 	Hostname string `json:"hostname,omitempty"`
 }

@@ -28,7 +28,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -78,7 +77,7 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	deploymentObject := &appsv1.Deployment{
 		ObjectMeta: objectMeta,
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32(1),
+			Replicas: app.Spec.Replicas,
 			Selector: &metav1.LabelSelector{ // @TODO could make this a helper - takes obj meta, returns label selector
 				MatchLabels: objectMeta.Labels,
 			},
