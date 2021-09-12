@@ -122,12 +122,35 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		},
 	}
 
+	// Ingress
+	ingressObject := &networkingv1.Ingress{
+		ObjectMeta: objectMeta,
+		Spec: networkingv1.IngressSpec{
+			// @TODO support TLS
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: app.Spec.Hostname,
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: r.ingressPathsHelper(app),
+						},
+					},
+				},
+			},
+		},
+	}
+
 	result, err := r.ReconcileResource(app, deploymentObject, reconciler.StatePresent)
 	if result != nil || err != nil {
 		return util.ReconcileReturnHelper(result, err)
 	}
 
 	result, err = r.ReconcileResource(app, serviceObject, util.ReconcilerStateHelper(app.Spec.ServiceEnabled))
+	if result != nil || err != nil {
+		return util.ReconcileReturnHelper(result, err)
+	}
+
+	result, err = r.ReconcileResource(app, ingressObject, util.ReconcilerStateHelper(app.Spec.IngressEnabled))
 	if result != nil || err != nil {
 		return util.ReconcileReturnHelper(result, err)
 	}
@@ -173,6 +196,30 @@ func (r *SimpleAppReconciler) namesToLocalObjectRefs(names []string) []corev1.Lo
 	}
 
 	return refs
+}
+
+// ingressPathsHelper returns generated ingress paths for the app
+func (r *SimpleAppReconciler) ingressPathsHelper(app webappv1.SimpleApp) []networkingv1.HTTPIngressPath {
+	var paths []networkingv1.HTTPIngressPath
+
+	prefixType := networkingv1.PathTypePrefix
+
+	for _, path := range app.Spec.IngressPaths {
+		paths = append(paths, networkingv1.HTTPIngressPath{
+			Path:     path,
+			PathType: &prefixType,
+			Backend: networkingv1.IngressBackend{
+				Service: &networkingv1.IngressServiceBackend{
+					Name: app.Name,
+					Port: networkingv1.ServiceBackendPort{
+						Number: app.Spec.ContainerPort,
+					},
+				},
+			},
+		})
+	}
+
+	return paths
 }
 
 // SetupWithManager sets up the controller with the Manager.
