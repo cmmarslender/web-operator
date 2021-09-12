@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,12 +29,44 @@ type SimpleAppSpec struct {
 	// Image is the container image to deploy
 	Image string `json:"image,omitempty"`
 
+	// ImagePullPolicy describes a policy for if/when to pull a container image
+	// +kubebuilder:default:="IfNotPresent"
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// ImagePullSecrets names of the secrets with image pull credentials
+	ImagePullSecrets []string `json:"imagePullSecrets,omitempty"`
+
+	// @TODO LivenessProbe
+	// @TODO ReadinessProbe
+
+	// ContainerPort is the port the container is set to listen on
+	// +kubebuilder:default:=80
+	ContainerPort int32 `json:"internalPort,omitempty"`
+
 	// Replicas how many replicas in the deployment
 	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
 
+	// ServiceEnabled sets whether an ingress should be enabled
+	// +kubebuilder:default:=true
+	ServiceEnabled bool `json:"serviceEnabled,omitempty"`
+
+	// ServicePort is the port the service will listen on
+	// traffic will be forwarded at the service to the ContainerPort
+	// +kubebuilder:default:=80
+	ServicePort int32 `json:"servicePort,omitempty"`
+
+	// IngressEnabled sets whether an ingress should be enabled
+	// +kubebuilder:default:=true
+	IngressEnabled bool `json:"ingressEnabled,omitempty"`
+
 	// Hostname is the hostname to use for the Ingress
 	Hostname string `json:"hostname,omitempty"`
+
+	// IngressPaths are the paths the ingress will serve traffic on
+	// The default below looks like an object, but it's actually an array in kubebuilder syntax
+	// +kubebuilder:default:={"/"}
+	IngressPaths []string `json:"ingressPaths,omitempty"`
 }
 
 // SimpleAppStatus defines the observed state of SimpleApp

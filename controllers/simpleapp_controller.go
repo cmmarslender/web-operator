@@ -23,13 +23,17 @@ import (
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/banzaicloud/operator-tools/pkg/reconciler"
 	webappv1 "github.com/cmmarslender/web-operator/api/v1"
+	util "github.com/cmmarslender/web-operator/pkg"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -64,8 +68,6 @@ type SimpleAppReconciler struct {
 func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log.Info(fmt.Sprintf("SimpleApp name is %s", req.NamespacedName))
 
-	resourceReconciler := reconciler.NewReconcilerWith(r.Client, reconciler.WithLog(r.Log))
-
 	var app webappv1.SimpleApp
 	if err := r.Get(ctx, req.NamespacedName, &app); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -88,35 +90,61 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  app.Name,
-							Image: app.Spec.Image,
+							Name:            app.Name,
+							Image:           app.Spec.Image,
+							ImagePullPolicy: app.Spec.ImagePullPolicy,
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 80,
+									ContainerPort: app.Spec.ContainerPort,
 								},
 							},
 						},
 					},
+					ImagePullSecrets: r.namesToLocalObjectRefs(app.Spec.ImagePullSecrets),
 				},
 			},
 		},
 	}
 
-	// @TODO move this + reconcileresource into a helper method that does this automatically - can call for each resource we need to reconcile
-	err := ctrl.SetControllerReference(&app, deploymentObject, r.Scheme)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	result, err := resourceReconciler.ReconcileResource(deploymentObject, reconciler.StatePresent)
-	if err != nil {
-		return ctrl.Result{}, err
+	// Service
+	serviceObject := &corev1.Service{
+		ObjectMeta: objectMeta,
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Ports: []corev1.ServicePort{
+				{
+					Protocol:   corev1.ProtocolTCP,
+					Port:       app.Spec.ServicePort,
+					TargetPort: intstr.IntOrString{IntVal: app.Spec.ContainerPort},
+				},
+			},
+			Selector: objectMeta.Labels,
+		},
 	}
 
-	if result != nil {
-		return *result, nil
+	result, err := r.ReconcileResource(app, deploymentObject, reconciler.StatePresent)
+	if result != nil || err != nil {
+		return util.ReconcileReturnHelper(result, err)
 	}
 
-	return ctrl.Result{}, nil
+	result, err = r.ReconcileResource(app, serviceObject, util.ReconcilerStateHelper(app.Spec.ServiceEnabled))
+	if result != nil || err != nil {
+		return util.ReconcileReturnHelper(result, err)
+	}
+
+	return reconcile.Result{}, nil
+}
+
+// ReconcileResource Sets ownership of the resource and then ensures the resource is in the correct state in the cluster
+func (r *SimpleAppReconciler) ReconcileResource(app webappv1.SimpleApp, obj client.Object, state reconciler.DesiredState) (*reconcile.Result, error) {
+	// @TODO this (along with the app) should probably live in some sort of parent reconciler struct
+	resourceReconciler := reconciler.NewReconcilerWith(r.Client, reconciler.WithLog(r.Log))
+
+	err := ctrl.SetControllerReference(&app, obj, r.Scheme)
+	if err != nil {
+		return nil, err
+	}
+	return resourceReconciler.ReconcileResource(obj, state)
 }
 
 // getObjectMeta returns the object meta for resources owned by the SimpleApp
@@ -128,11 +156,23 @@ func (r *SimpleAppReconciler) getObjectMeta(app webappv1.SimpleApp) metav1.Objec
 	}
 }
 
+// labels returns labels for the provided app
 func (r *SimpleAppReconciler) labels(app webappv1.SimpleApp) map[string]string {
 	return map[string]string{
 		typeLabelKey: app.Kind,
 		nameLabelKey: app.Name,
 	}
+}
+
+// namesToLocalObjectRefs returns []LocalObjectReference from []string
+func (r *SimpleAppReconciler) namesToLocalObjectRefs(names []string) []corev1.LocalObjectReference {
+	var refs []corev1.LocalObjectReference
+
+	for _, name := range names {
+		refs = append(refs, corev1.LocalObjectReference{Name: name})
+	}
+
+	return refs
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -145,5 +185,7 @@ func (r *SimpleAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&webappv1.SimpleApp{}).
 		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
+		Owns(&networkingv1.Ingress{}).
 		Complete(r)
 }
