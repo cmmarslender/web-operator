@@ -103,6 +103,7 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		},
 	}
 
+	// @TODO move this + reconcileresource into a helper method that does this automatically - can call for each resource we need to reconcile
 	err := ctrl.SetControllerReference(&app, deploymentObject, r.Scheme)
 	if err != nil {
 		return ctrl.Result{}, err
