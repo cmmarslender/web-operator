@@ -41,7 +41,7 @@ type SimpleAppSpec struct {
 
 	// ContainerPort is the port the container is set to listen on
 	// +kubebuilder:default:=80
-	ContainerPort int32 `json:"internalPort,omitempty"`
+	ContainerPort int32 `json:"containerPort,omitempty"`
 
 	// Replicas how many replicas in the deployment
 	// +kubebuilder:default:=1
