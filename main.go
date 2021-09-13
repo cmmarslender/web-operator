@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	webappv1 "github.com/cmmarslender/web-operator/api/v1"
-	"github.com/cmmarslender/web-operator/controllers"
+	webappv1 "github.com/cmmarslender/web-operator/apis/webapp/v1"
+	"github.com/cmmarslender/web-operator/controllers/webapp"
 	//+kubebuilder:scaffold:imports
 )
 

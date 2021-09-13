@@ -22,7 +22,7 @@ import (
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/banzaicloud/operator-tools/pkg/reconciler"
-	webappv1 "github.com/cmmarslender/web-operator/api/v1"
+	webappv1 "github.com/cmmarslender/web-operator/apis/webapp/v1"
 	util "github.com/cmmarslender/web-operator/pkg"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"

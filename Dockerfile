@@ -12,7 +12,7 @@ RUN go mod download
 # Copy the go source
 COPY Makefile Makefile
 COPY main.go main.go
-COPY api/ api/
+COPY apis/ apis/
 COPY controllers/ controllers/
 COPY hack/ hack/
 COPY pkg/ pkg/

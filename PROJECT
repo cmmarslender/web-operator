@@ -1,6 +1,7 @@
 domain: k8s.cmm.io
 layout:
 - go.kubebuilder.io/v3
+multigroup: true
 projectName: web-operator
 repo: github.com/cmmarslender/web-operator
 resources:
