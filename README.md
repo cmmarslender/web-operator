@@ -6,7 +6,7 @@ A kubernetes operator for deploying a simple/typical webapp consisting of a depl
 
 Generated using kubebuilder.
 
-Project initialized with `kubebuilder init --domain k8s.cmm.io --repo github.com/cmmarslender/web-operator`
+Project initialized with `kubebuilder init --domain k8s.cmm.io --repo github.com/cmmarslender/web-operator --component-config`
 
 Additional APIs created with commands like `kubebuilder create api --group webapp --version v1 --kind SimpleApp`
 
