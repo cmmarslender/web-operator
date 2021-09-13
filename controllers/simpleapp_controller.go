@@ -223,6 +223,10 @@ func (r *SimpleAppReconciler) ingressPathsHelper(app webappv1.SimpleApp) []netwo
 	return paths
 }
 
+// +kubebuilder:rbac:groups="",resources=services,verbs=*
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=*
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=*
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimpleAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// Set our own default annotator so we can control the key used for last-applied
