@@ -145,6 +145,7 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return util.ReconcileReturnHelper(result, err)
 	}
 
+	// @TODO service should always be enabled if ingress is enabled
 	result, err = r.ReconcileResource(app, serviceObject, util.ReconcilerStateHelper(app.Spec.ServiceEnabled))
 	if result != nil || err != nil {
 		return util.ReconcileReturnHelper(result, err)

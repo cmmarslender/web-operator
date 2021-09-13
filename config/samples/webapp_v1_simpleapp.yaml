@@ -3,6 +3,48 @@ kind: SimpleApp
 metadata:
   name: simpleapp-sample
 spec:
+  # The image to deploy in the deployment.
+  # Required.
   image: nginx:latest
+
+  # Image pull policy.
+  # Optional. Default: "IfNotPresent"
+  imagePullPolicy: "IfNotPresent"
+
+  # List of (string) names of secrets for pulling images.
+  # Optional. Default: empty list
+  # imagePullSecrets:
+  #   - my-secret
+  #   - my-other-secret
+  imagePullSecrets: []
+
+  # The port the container will listen on
+  # Optional. Default 80
+  containerPort: 80
+
+  # The number of replicas for the deployment.
+  # Optional. Default: 1
   replicas: 1 # optional, defaults to 1
+
+  # Whether to create a service pointing to the deployment
+  # Optional. Default: true
+  # Note: This setting is ignored if ingress is enabled. The service is required when using ingress.
+  serviceEnabled: true
+
+  # The port the service listens on.
+  # Optional. Default 80
+  # Traffic is translated at the service from the servicePort to the containerPort
+  servicePort: 80
+
+  # Whether to create an ingress pointing to the service
+  # Optional. Default: true
+  ingressEnabled: true
+
+  # The hostname used by the ingress
+  # Required.
   hostname: example.com
+
+  # The paths recognized by the ingress. Paths are prefixes, so all subpaths will also match.
+  # Optional. Default: ["/"]
+  ingressPaths:
+    - "/"
