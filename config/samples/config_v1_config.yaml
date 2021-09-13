@@ -2,6 +2,15 @@ apiVersion: config.k8s.cmm.io/v1
 kind: Config
 metadata:
   name: config-sample
-spec:
-  # Add fields here
-  foo: bar
+health:
+  healthProbeBindAddress: :8081
+metrics:
+  bindAddress: 127.0.0.1:8080
+webhook:
+  port: 9443
+leaderElection:
+  leaderElect: false
+#  resourceName: f4f148e7.k8s.cmm.io
+ingressAnnotations: []
+#  kubernetes.io/ingress.class: nginx
+#  kubernetes.io/tls-acme: "true"

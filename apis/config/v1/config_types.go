@@ -30,6 +30,9 @@ type Config struct {
 
 	// ControllerManagerConfigurationSpec returns the configurations for controllers
 	cfg.ControllerManagerConfigurationSpec `json:",inline"`
+
+	// IngressAnnotations Default annotations to add to all ingresses
+	IngressAnnotations map[string]string `json:"ingressAnnotations,omitempty"`
 }
 
 func init() {

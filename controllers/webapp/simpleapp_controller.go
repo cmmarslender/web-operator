@@ -22,6 +22,7 @@ import (
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/banzaicloud/operator-tools/pkg/reconciler"
+	configv1 "github.com/cmmarslender/web-operator/apis/config/v1"
 	webappv1 "github.com/cmmarslender/web-operator/apis/webapp/v1"
 	util "github.com/cmmarslender/web-operator/pkg"
 	"github.com/go-logr/logr"
@@ -50,6 +51,7 @@ type SimpleAppReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+	Config *configv1.Config
 }
 
 //+kubebuilder:rbac:groups=webapp.k8s.cmm.io,resources=simpleapps,verbs=get;list;watch;create;update;patch;delete
@@ -124,7 +126,7 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// Ingress
 	ingressObject := &networkingv1.Ingress{
-		ObjectMeta: objectMeta,
+		ObjectMeta: r.ingressAnnotations(app, objectMeta),
 		Spec: networkingv1.IngressSpec{
 			// @TODO support TLS
 			Rules: []networkingv1.IngressRule{
@@ -221,6 +223,12 @@ func (r *SimpleAppReconciler) ingressPathsHelper(app webappv1.SimpleApp) []netwo
 	}
 
 	return paths
+}
+
+func (r *SimpleAppReconciler) ingressAnnotations(app webappv1.SimpleApp, objectMeta metav1.ObjectMeta) metav1.ObjectMeta {
+	objectMeta.Annotations = r.Config.IngressAnnotations
+
+	return objectMeta
 }
 
 // +kubebuilder:rbac:groups="",resources=services,verbs=*
