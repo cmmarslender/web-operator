@@ -67,6 +67,10 @@ type SimpleAppSpec struct {
 	// The default below looks like an object, but it's actually an array in kubebuilder syntax
 	// +kubebuilder:default:={"/"}
 	IngressPaths []string `json:"ingressPaths,omitempty"`
+
+	// IngressAnnotations map of annotations that should be added to an ingress
+	// If a key is present in this, it will override the global ingress annotation with the same key
+	IngressAnnotations map[string]string `json:"ingressAnnotations,omitempty"`
 }
 
 // SimpleAppStatus defines the observed state of SimpleApp

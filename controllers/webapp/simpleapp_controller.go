@@ -128,7 +128,6 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	ingressObject := &networkingv1.Ingress{
 		ObjectMeta: r.ingressAnnotations(app, objectMeta),
 		Spec: networkingv1.IngressSpec{
-			// @TODO support TLS
 			Rules: []networkingv1.IngressRule{
 				{
 					Host: app.Spec.Hostname,
@@ -137,6 +136,12 @@ func (r *SimpleAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 							Paths: r.ingressPathsHelper(app),
 						},
 					},
+				},
+			},
+			TLS: []networkingv1.IngressTLS{
+				{
+					Hosts:      []string{app.Spec.Hostname},
+					SecretName: fmt.Sprintf("%s-tls", app.Name),
 				},
 			},
 		},
@@ -226,8 +231,16 @@ func (r *SimpleAppReconciler) ingressPathsHelper(app webappv1.SimpleApp) []netwo
 }
 
 func (r *SimpleAppReconciler) ingressAnnotations(app webappv1.SimpleApp, objectMeta metav1.ObjectMeta) metav1.ObjectMeta {
-	objectMeta.Annotations = r.Config.IngressAnnotations
+	// Start with the global annotations
+	annotations := r.Config.IngressAnnotations
 
+	// Then iterate the local annotations and add them to the global annotations
+	// Overwriting any existing keys as we go
+	for k, v := range app.Spec.IngressAnnotations {
+		annotations[k] = v
+	}
+
+	objectMeta.Annotations = annotations
 	return objectMeta
 }
 

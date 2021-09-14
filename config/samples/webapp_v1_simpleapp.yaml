@@ -48,3 +48,7 @@ spec:
   # Optional. Default: ["/"]
   ingressPaths:
     - "/"
+
+  # Additional annotations to apply to the ingress. Will override global annotations with the same key.
+  # Optional. Default: empty map
+  ingressAnnotations: {}
